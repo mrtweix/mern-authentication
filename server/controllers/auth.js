@@ -180,3 +180,44 @@ exports.forgotPassword = async (req, res) => {
       .json({ error: "User with that email does not exist" });
   }
 };
+
+exports.resetPassword = async (req, res) => {
+  const { resetPasswordLink, newPassword } = req.body;
+
+  if (resetPasswordLink) {
+    jwt.verify(
+      resetPasswordLink,
+      process.env.JWT_PASSWORD_RESET,
+      async function (err, decoded) {
+        if (err) {
+          return res.status(400).json({
+            error: "Expired link. Try again",
+          });
+        }
+
+        const user = await User.findOne({ resetPasswordLink });
+
+        if (user) {
+          user.password = newPassword;
+          user.resetPasswordLink = "";
+
+          const updatePassword = await user.save();
+
+          if (updatePassword) {
+            return res.json({
+              message: `Great! Now you can login with your new password`,
+            });
+          } else {
+            return res.status(400).json({
+              error: "Error resetting user password",
+            });
+          }
+        } else {
+          return res.status(400).json({
+            error: "Error resetting user password",
+          });
+        }
+      }
+    );
+  }
+};

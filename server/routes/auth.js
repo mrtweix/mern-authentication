@@ -8,6 +8,7 @@ const {
   accountActivation,
   signin,
   forgotPassword,
+  resetPassword,
 } = require("../controllers/auth");
 
 // import validators
@@ -28,6 +29,12 @@ router.put(
   forgotPasswordValidator,
   runValidation,
   forgotPassword
+);
+router.put(
+  "/reset-password",
+  resetPasswordValidator,
+  runValidation,
+  resetPassword
 );
 
 module.exports = router;
