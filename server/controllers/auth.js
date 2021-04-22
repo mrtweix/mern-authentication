@@ -111,6 +111,30 @@ exports.accountActivation = async (req, res) => {
   }
 };
 
+exports.requireSignin = expressJwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ["sha1", "RS256", "HS256"],
+});
+
+exports.adminMiddleware = (req, res, next) => {
+  User.findById({ _id: req.user._id }).exec((err, user) => {
+    if (err || !user) {
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    if (user.role !== "admin") {
+      return res.status(400).json({
+        error: "Admin resource. Access denied.",
+      });
+    }
+
+    req.profile = user;
+    next();
+  });
+};
+
 exports.signin = async (req, res) => {
   const { email, password } = req.body;
 

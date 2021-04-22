@@ -14,23 +14,23 @@ mongoose
     useCreateIndex: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("DB connected".white))
+  .then(() => console.log("DB connected"))
   .catch((err) => console.log("DB CONNECTION ERROR: ", err));
 
 // import routes
 const authRoutes = require("./routes/auth");
-// const userRoutes = require("./routes/user");
+const userRoutes = require("./routes/user");
 
 // app middlewares
 app.use(express.json());
 app.use(cors()); // allows all origins
 if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev")).brightCyan;
+  app.use(morgan("dev")).blue;
 }
 
 // middleware
 app.use("/api", authRoutes);
-// app.use("/api", userRoutes);
+app.use("/api", userRoutes);
 
 const port = process.env.PORT || 8800;
 app.listen(port, console.log(`API is running on port ${port}`.magenta));
