@@ -110,3 +110,73 @@ exports.accountActivation = async (req, res) => {
     );
   }
 };
+
+exports.signin = async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user && (await user.matchPassword(password))) {
+    const { _id, name, email, role } = user;
+
+    // generate a token and send to client
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    return res.json({
+      token,
+      user: { _id, name, email, role },
+    });
+  } else {
+    return res.status(400).json({
+      error: "Email and password do not match",
+    });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user) {
+    const token = jwt.sign(
+      { _id: user._id, name: user.name },
+      process.env.JWT_PASSWORD_RESET,
+      { expiresIn: "10m" }
+    );
+
+    const emailData = {
+      from: process.env.GMAIL_USER,
+      to: email,
+      subject: `Password Reset link`,
+      html: `
+          <h1>Please use the following link to reset your password</h1>
+          <p>${process.env.CLIENT_URL}/auth/password/reset/${token}</p>
+          <hr />
+          <p>This email may contain sensetive information</p>
+          <p>${process.env.CLIENT_URL}</p>
+      `,
+    };
+
+    const updateUser = await user.updateOne({ resetPasswordLink: token });
+
+    if (updateUser) {
+      transporter.sendMail(emailData, (error, info) => {
+        if (error) {
+          return res.json({
+            message: error.message,
+          });
+        }
+        return res.json({
+          message: `Email has been sent to ${email}. Follow the instruction to activate your account`,
+        });
+      });
+    }
+  } else {
+    return res
+      .status(400)
+      .json({ error: "User with that email does not exist" });
+  }
+};
